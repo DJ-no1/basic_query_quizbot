@@ -1,0 +1,401 @@
+{% extends 'quiz/base.html' %}
+
+{% block content %}
+<div class="text-center mb-12">
+    <h1 class="text-4xl font-bold text-gray-900 mb-4">AI Quiz Bot</h1>
+    <p class="text-xl text-gray-600 max-w-3xl mx-auto">
+        Generate personalized quizzes on any topic using the power of AI. 
+        Choose your subject, difficulty level, and let our intelligent system create engaging questions for you.
+    </p>
+</div>
+
+<!-- Quiz Generation Form -->
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white rounded-lg shadow-lg p-8 card-hover">
+        <h2 class="text-2xl font-semibold text-gray-900 mb-6 text-center">Create Your Quiz</h2>
+        
+        <form method="post" action="{% url 'quiz:generate_quiz' %}" class="space-y-6" id="quiz-generation-form">
+            {% csrf_token %}
+            
+            <!-- Topic Input -->
+            <div>
+                <label for="topic" class="block text-sm font-medium text-gray-700 mb-2">
+                    Quiz Topic *
+                </label>
+                <input 
+                    type="text" 
+                    id="topic" 
+                    name="topic" 
+                    required
+                    placeholder="e.g., Python Programming, World History, Biology..."
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                <p class="text-sm text-gray-500 mt-1">Enter any topic you'd like to be quizzed on</p>
+            </div>
+
+            <!-- Difficulty Selection -->
+            <div>
+                <label for="difficulty" class="block text-sm font-medium text-gray-700 mb-2">
+                    Difficulty Level
+                </label>
+                <select 
+                    id="difficulty" 
+                    name="difficulty"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="easy">Easy - Basic concepts and straightforward questions</option>
+                    <option value="medium" selected>Medium - Requires some analysis and understanding</option>
+                    <option value="hard">Hard - Challenging questions requiring deep thinking</option>
+                </select>
+            </div>
+
+            <!-- Number of Questions -->
+            <div>
+                <label for="num_questions" class="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Questions
+                </label>
+                <select 
+                    id="num_questions" 
+                    name="num_questions"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                    <option value="5">5 Questions - Quick quiz</option>
+                    <option value="10" selected>10 Questions - Standard quiz</option>
+                    <option value="15">15 Questions - Extended quiz</option>
+                    <option value="20">20 Questions - Comprehensive quiz</option>
+                </select>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="pt-4">
+                <button 
+                    type="submit"
+                    id="generate-btn"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition duration-200 ease-in-out transform hover:scale-105"
+                >
+                    🚀 Generate Quiz
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+    <div class="text-center">
+        <div class="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl">🤖</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">AI-Powered</h3>
+        <p class="text-gray-600">Advanced AI generates unique, relevant questions tailored to your topic</p>
+    </div>
+    
+    <div class="text-center">
+        <div class="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl">⚡</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Instant Results</h3>
+        <p class="text-gray-600">Get immediate feedback and detailed explanations for each answer</p>
+    </div>
+    
+    <div class="text-center">
+        <div class="bg-purple-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+            <span class="text-2xl">🎯</span>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Customizable</h3>
+        <p class="text-gray-600">Choose difficulty level and number of questions to match your needs</p>
+    </div>
+</div>
+
+<!-- Sample Topics -->
+<div class="mt-16 bg-gray-100 rounded-lg p-8">
+    <h3 class="text-xl font-semibold text-gray-900 mb-4 text-center">Popular Quiz Topics</h3>
+    <div class="flex flex-wrap justify-center gap-3">
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">Python Programming</span>
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">World History</span>
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">Biology</span>
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">Mathematics</span>
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">Literature</span>
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">Science</span>
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">Geography</span>
+        <span class="bg-white px-4 py-2 rounded-full text-sm text-gray-700 shadow-sm">JavaScript</span>
+    </div>
+    <p class="text-center text-gray-600 mt-4 text-sm">
+        Or create a quiz on any topic you can think of!
+    </p>
+</div>
+
+<!-- Loading Screen Overlay -->
+<div id="loading-overlay" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg p-8 max-w-md mx-4 text-center">
+        <!-- AI Brain Animation -->
+        <div class="relative mb-6">
+            <div class="brain-container">
+                <div class="brain">
+                    <div class="brain-pulse"></div>
+                    <span class="brain-emoji">🤖</span>
+                </div>
+                <div class="neural-networks">
+                    <div class="neural-line neural-line-1"></div>
+                    <div class="neural-line neural-line-2"></div>
+                    <div class="neural-line neural-line-3"></div>
+                    <div class="neural-line neural-line-4"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Text with Typing Animation -->
+        <h3 class="text-xl font-semibold text-gray-900 mb-4">AI is Crafting Your Quiz</h3>
+        <div class="typing-text mb-4">
+            <span id="loading-text">Analyzing your topic</span>
+            <span class="cursor">|</span>
+        </div>
+        
+        <!-- Progress Dots -->
+        <div class="flex justify-center space-x-2 mb-4">
+            <div class="dot dot-1"></div>
+            <div class="dot dot-2"></div>
+            <div class="dot dot-3"></div>
+            <div class="dot dot-4"></div>
+        </div>
+        
+        <p class="text-gray-600 text-sm">This may take 10-30 seconds...</p>
+    </div>
+</div>
+
+<style>
+/* Brain Animation Styles */
+.brain-container {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    margin: 0 auto;
+}
+
+.brain {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: brainFloat 3s ease-in-out infinite;
+}
+
+.brain-pulse {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    opacity: 0.4;
+    animation: brainPulse 2s ease-in-out infinite;
+}
+
+.brain-emoji {
+    font-size: 32px;
+    z-index: 2;
+    animation: brainSpin 4s linear infinite;
+}
+
+/* Neural Network Lines */
+.neural-networks {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.neural-line {
+    position: absolute;
+    background: linear-gradient(90deg, transparent, #667eea, transparent);
+    height: 2px;
+    border-radius: 1px;
+    animation: neuralFlow 2s ease-in-out infinite;
+}
+
+.neural-line-1 {
+    top: 20%;
+    left: -20px;
+    width: 120px;
+    animation-delay: 0s;
+}
+
+.neural-line-2 {
+    top: 40%;
+    right: -20px;
+    width: 100px;
+    animation-delay: 0.5s;
+}
+
+.neural-line-3 {
+    top: 60%;
+    left: -15px;
+    width: 110px;
+    animation-delay: 1s;
+}
+
+.neural-line-4 {
+    top: 80%;
+    right: -25px;
+    width: 130px;
+    animation-delay: 1.5s;
+}
+
+/* Progress Dots */
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #667eea;
+    animation: dotBounce 1.4s ease-in-out infinite both;
+}
+
+.dot-1 { animation-delay: -0.32s; }
+.dot-2 { animation-delay: -0.16s; }
+.dot-3 { animation-delay: 0s; }
+.dot-4 { animation-delay: 0.16s; }
+
+/* Typing Cursor */
+.cursor {
+    animation: blink 1s infinite;
+    color: #667eea;
+    font-weight: bold;
+}
+
+/* Animations */
+@keyframes brainFloat {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes brainPulse {
+    0% { transform: scale(1); opacity: 0.4; }
+    50% { transform: scale(1.1); opacity: 0.2; }
+    100% { transform: scale(1); opacity: 0.4; }
+}
+
+@keyframes brainSpin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes neuralFlow {
+    0% { opacity: 0; transform: translateX(-20px); }
+    50% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(20px); }
+}
+
+@keyframes dotBounce {
+    0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+    40% { transform: scale(1.2); opacity: 1; }
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+}
+
+/* Typing Text Animation */
+.typing-text {
+    font-family: 'Courier New', monospace;
+    color: #667eea;
+    font-weight: 500;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('quiz-generation-form');
+    const loadingOverlay = document.getElementById('loading-overlay');
+    const generateBtn = document.getElementById('generate-btn');
+    const loadingTextElement = document.getElementById('loading-text');
+    
+    // Loading messages to cycle through
+    const loadingMessages = [
+        "Analyzing your topic...",
+        "Consulting AI knowledge base...",
+        "Crafting intelligent questions...",
+        "Selecting optimal difficulty...",
+        "Preparing answer explanations...",
+        "Fine-tuning quiz structure...",
+        "Almost ready! Finalizing quiz..."
+    ];
+    
+    let messageIndex = 0;
+    let typingInterval;
+    
+    function typeMessage(message, callback) {
+        let charIndex = 0;
+        loadingTextElement.textContent = '';
+        
+        const typeChar = () => {
+            if (charIndex < message.length) {
+                loadingTextElement.textContent += message.charAt(charIndex);
+                charIndex++;
+                setTimeout(typeChar, 50); // Typing speed
+            } else if (callback) {
+                setTimeout(callback, 1000); // Pause before next message
+            }
+        };
+        
+        typeChar();
+    }
+    
+    function cycleMessages() {
+        if (messageIndex < loadingMessages.length) {
+            typeMessage(loadingMessages[messageIndex], () => {
+                messageIndex++;
+                cycleMessages();
+            });
+        } else {
+            // Reset and start over
+            messageIndex = 0;
+            setTimeout(cycleMessages, 1000);
+        }
+    }
+    
+    form.addEventListener('submit', function(e) {
+        // Show loading screen
+        loadingOverlay.classList.remove('hidden');
+        
+        // Disable the submit button
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = '⏳ Generating...';
+        generateBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        
+        // Start cycling through messages
+        messageIndex = 0;
+        cycleMessages();
+        
+        // Add a minimum loading time for better UX (2 seconds)
+        const startTime = Date.now();
+        const minLoadTime = 2000;
+        
+        // Store original form action
+        const originalAction = form.action;
+        
+        // Override form submission to handle minimum load time
+        e.preventDefault();
+        
+        setTimeout(() => {
+            // Submit the form after minimum load time
+            form.submit();
+        }, Math.max(0, minLoadTime - (Date.now() - startTime)));
+    });
+    
+    // Hide loading screen if page loads (in case of validation errors)
+    window.addEventListener('load', function() {
+        if (!loadingOverlay.classList.contains('hidden')) {
+            loadingOverlay.classList.add('hidden');
+            generateBtn.disabled = false;
+            generateBtn.innerHTML = '🚀 Generate Quiz';
+            generateBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+        }
+    });
+});
+</script>
+{% endblock %}

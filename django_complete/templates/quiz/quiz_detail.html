@@ -1,0 +1,251 @@
+{% extends 'quiz/base.html' %}
+{% load quiz_extras %}
+
+{% block content %}
+<!-- Quiz Header -->
+<div class="bg-white rounded-lg shadow-lg p-4 sm:p-6 mb-4 sm:mb-8">
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
+        <div class="flex-1 mb-2 sm:mb-0">
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <h1 class="text-lg sm:text-2xl font-bold text-gray-900">
+                    <span id="topic-preview">{{ quiz.topic|truncatechars:20 }}</span>
+                    <span id="topic-full" class="hidden">{{ quiz.topic }}</span>
+                </h1>
+                {% if quiz.topic|length > 20 %}
+                    <button 
+                        id="topic-toggle-btn"
+                        onclick="toggleTopicDisplay()"
+                        class="text-xs sm:text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 sm:px-3 sm:py-1 rounded-full transition-colors duration-200"
+                        title="Click to see full topic"
+                    >
+                        <span id="toggle-text" class="hidden sm:inline">Show Full Topic</span>
+                        <span id="toggle-icon">👁️</span>
+                    </button>
+                {% endif %}
+            </div>
+            <p class="text-xs sm:text-sm text-gray-600 mt-1">
+                <span class="capitalize font-medium">{{ quiz.difficulty }}</span> | 
+                Q{{ question_number }}/{{ total_questions }}
+            </p>
+        </div>
+        <div class="text-right">
+            <p class="text-base sm:text-lg font-semibold text-blue-600">Score: {{ quiz_session.current_score }}</p>
+        </div>
+    </div>
+    
+    <!-- Progress Bar -->
+    <div class="w-full bg-gray-200 rounded-full h-2 sm:h-3">
+        <div 
+            id="progress-bar"
+            class="bg-blue-600 h-2 sm:h-3 rounded-full transition-all duration-300" 
+            data-progress="{{ progress_percentage|floatformat:1 }}"
+        ></div>
+    </div>
+    <p class="text-xs sm:text-sm text-gray-500 mt-1">{{ progress_percentage|floatformat:1 }}% Complete</p>
+</div>
+
+<!-- Question Card -->
+<div class="bg-white rounded-lg shadow-lg p-4 sm:p-8 mb-4">
+    <h2 class="text-lg sm:text-xl font-semibold text-gray-900 mb-4 sm:mb-6">{{ current_question.question }}</h2>
+    
+    <form method="post" action="{% url 'quiz:submit_answer' quiz.session_id %}" id="quiz-form">
+        {% csrf_token %}
+        
+        <div class="space-y-3 sm:space-y-4">
+            {% for option in options %}
+                <label class="flex items-center p-3 sm:p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <input 
+                        type="radio" 
+                        name="selected_option" 
+                        value="{{ forloop.counter0 }}" 
+                        class="mr-3 sm:mr-4 text-blue-600 focus:ring-blue-500"
+                        required
+                    >
+                    <span class="text-sm sm:text-base text-gray-800">
+                        <strong>{{ forloop.counter0|index_to_letter }}.</strong> {{ option }}
+                    </span>
+                </label>
+            {% endfor %}
+        </div>
+        
+        <!-- Desktop Navigation -->
+        <div class="hidden sm:flex mt-6 sm:mt-8 justify-between items-center">
+            <a href="{% url 'quiz:index' %}" class="text-gray-600 hover:text-gray-800 font-medium">
+                ← Back to Home
+            </a>
+            
+            <button 
+                type="submit"
+                id="submit-answer-btn"
+                class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition duration-200 ease-in-out"
+            >
+                Submit Answer →
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Mobile Sticky Footer -->
+<div class="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-4 z-50">
+    <div class="flex space-x-3">
+        <a href="{% url 'quiz:index' %}" class="flex-shrink-0 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-3 px-4 rounded-md transition duration-200 text-sm">
+            ← Home
+        </a>
+        
+        <button 
+            type="submit"
+            form="quiz-form"
+            id="submit-answer-btn-mobile"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition duration-200 ease-in-out"
+        >
+            Submit Answer →
+        </button>
+    </div>
+</div>
+
+<!-- Mobile spacing to prevent content being hidden behind sticky footer -->
+<div class="sm:hidden h-20"></div>
+
+<!-- Quiz Info -->
+<div class="bg-blue-50 rounded-lg p-4 sm:p-6 mb-4 sm:mb-0">
+    <h3 class="text-base sm:text-lg font-semibold text-blue-900 mb-3 sm:mb-2">Quiz Information</h3>
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 text-xs sm:text-sm">
+        <div>
+            <p class="text-blue-700 font-medium">Topic</p>
+            <p class="text-blue-800">
+                <span id="info-topic-preview">{{ quiz.topic|truncatechars:15 }}</span>
+                <span id="info-topic-full" class="hidden">{{ quiz.topic }}</span>
+                {% if quiz.topic|length > 15 %}
+                    <button 
+                        onclick="toggleInfoTopic()"
+                        class="ml-1 text-xs text-blue-600 hover:text-blue-800"
+                        title="Toggle full topic"
+                    >
+                        <span id="info-toggle-icon">...</span>
+                    </button>
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <p class="text-blue-700 font-medium">Difficulty</p>
+            <p class="text-blue-800 capitalize">{{ quiz.difficulty }}</p>
+        </div>
+        <div>
+            <p class="text-blue-700 font-medium">Questions</p>
+            <p class="text-blue-800">{{ total_questions }}</p>
+        </div>
+        <div>
+            <p class="text-blue-700 font-medium">Score</p>
+            <p class="text-blue-800">{{ quiz_session.current_score }}/{{ question_number|add:"-1" }}</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle topic display function
+function toggleTopicDisplay() {
+    const topicPreview = document.getElementById('topic-preview');
+    const topicFull = document.getElementById('topic-full');
+    const toggleText = document.getElementById('toggle-text');
+    const toggleIcon = document.getElementById('toggle-icon');
+    
+    if (topicPreview.classList.contains('hidden')) {
+        // Show preview, hide full
+        topicPreview.classList.remove('hidden');
+        topicFull.classList.add('hidden');
+        toggleText.textContent = 'Show Full Topic';
+        toggleIcon.textContent = '👁️';
+    } else {
+        // Show full, hide preview
+        topicPreview.classList.add('hidden');
+        topicFull.classList.remove('hidden');
+        toggleText.textContent = 'Hide Topic';
+        toggleIcon.textContent = '🙈';
+    }
+}
+
+// Toggle info topic display
+function toggleInfoTopic() {
+    const infoTopicPreview = document.getElementById('info-topic-preview');
+    const infoTopicFull = document.getElementById('info-topic-full');
+    const infoToggleIcon = document.getElementById('info-toggle-icon');
+    
+    if (infoTopicPreview.classList.contains('hidden')) {
+        // Show preview, hide full
+        infoTopicPreview.classList.remove('hidden');
+        infoTopicFull.classList.add('hidden');
+        infoToggleIcon.textContent = '...';
+    } else {
+        // Show full, hide preview
+        infoTopicPreview.classList.add('hidden');
+        infoTopicFull.classList.remove('hidden');
+        infoToggleIcon.textContent = '⬆️';
+    }
+}
+
+// Auto-submit on radio button selection (optional)
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('quiz-form');
+    const radios = form.querySelectorAll('input[type="radio"]');
+    
+    // Set progress bar width
+    const progressBar = document.getElementById('progress-bar');
+    if (progressBar) {
+        const progress = progressBar.getAttribute('data-progress');
+        progressBar.style.width = progress + '%';
+    }
+    
+    // Add keyboard support
+    document.addEventListener('keydown', function(e) {
+        if (e.key >= '1' && e.key <= '4') {
+            const index = parseInt(e.key) - 1;
+            if (radios[index]) {
+                radios[index].checked = true;
+            }
+        }
+        if (e.key === 'Enter') {
+            const checkedRadio = form.querySelector('input[type="radio"]:checked');
+            if (checkedRadio) {
+                form.submit();
+            }
+        }
+    });
+    
+    // Add loading state for answer submission
+    const submitBtn = document.getElementById('submit-answer-btn');
+    const submitBtnMobile = document.getElementById('submit-answer-btn-mobile');
+    
+    function handleSubmit() {
+        // Desktop button
+        if (submitBtn) {
+            submitBtn.innerHTML = '⏳ Processing...';
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+        }
+        
+        // Mobile button
+        if (submitBtnMobile) {
+            submitBtnMobile.innerHTML = '⏳ Processing...';
+            submitBtnMobile.disabled = true;
+            submitBtnMobile.classList.add('opacity-75', 'cursor-not-allowed');
+        }
+    }
+    
+    if (submitBtn) {
+        form.addEventListener('submit', handleSubmit);
+    }
+    
+    if (submitBtnMobile) {
+        submitBtnMobile.addEventListener('click', function() {
+            const checkedRadio = form.querySelector('input[type="radio"]:checked');
+            if (checkedRadio) {
+                handleSubmit();
+                form.submit();
+            } else {
+                alert('Please select an answer before submitting.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

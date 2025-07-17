@@ -1,0 +1,218 @@
+{% extends 'quiz/base.html' %}
+{% load quiz_extras %}
+
+{% block content %}
+<!-- Results Header -->
+<div class="text-center mb-8">
+    <h1 class="text-3xl font-bold text-gray-900 mb-2">Quiz Complete!</h1>
+    <div class="flex items-center justify-center space-x-3">
+        <p class="text-lg text-gray-600">
+            <span id="results-topic-preview">{{ quiz.topic|truncatechars:40 }}</span>
+            <span id="results-topic-full" class="hidden">{{ quiz.topic }}</span>
+        </p>
+        {% if quiz.topic|length > 40 %}
+            <button 
+                onclick="toggleResultsTopic()"
+                class="text-sm bg-gray-100 hover:bg-gray-200 text-gray-600 px-2 py-1 rounded-full transition-colors duration-200"
+                title="Toggle full topic"
+            >
+                <span id="results-toggle-icon">👁️</span>
+            </button>
+        {% endif %}
+    </div>
+    <p class="text-gray-500">{{ quiz.difficulty|capfirst }} Level</p>
+</div>
+
+<!-- Score Card -->
+<div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+    <div class="text-center">
+        <div class="text-6xl font-bold mb-4
+            {% if stats.percentage >= 80 %}text-green-600
+            {% elif stats.percentage >= 60 %}text-yellow-600
+            {% else %}text-red-600{% endif %}
+        ">
+            {{ stats.percentage|floatformat:1 }}%
+        </div>
+        
+        <h2 class="text-2xl font-semibold text-gray-900 mb-4">
+            {% if stats.percentage >= 90 %}
+                🎉 Excellent Work!
+            {% elif stats.percentage >= 80 %}
+                👏 Great Job!
+            {% elif stats.percentage >= 70 %}
+                👍 Good Effort!
+            {% elif stats.percentage >= 60 %}
+                📚 Keep Learning!
+            {% else %}
+                💪 Practice Makes Perfect!
+            {% endif %}
+        </h2>
+        
+        <div class="grid grid-cols-3 gap-6 mt-6">
+            <div class="text-center">
+                <div class="text-3xl font-bold text-green-600">{{ stats.correct_answers }}</div>
+                <div class="text-gray-600">Correct</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-red-600">{{ stats.incorrect_answers }}</div>
+                <div class="text-gray-600">Incorrect</div>
+            </div>
+            <div class="text-center">
+                <div class="text-3xl font-bold text-blue-600">{{ stats.total_questions_answered }}</div>
+                <div class="text-gray-600">Total</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="flex justify-center space-x-4 mb-8">
+    <a href="{% url 'quiz:restart_quiz' quiz.session_id %}" 
+       onclick="return confirmAction('Are you sure you want to restart this quiz?')"
+       class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-md transition duration-200">
+        🔄 Restart Quiz
+    </a>
+    <a href="{% url 'quiz:index' %}" 
+       class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-3 px-6 rounded-md transition duration-200">
+        🏠 New Quiz
+    </a>
+</div>
+
+<!-- Detailed Results -->
+<div class="bg-white rounded-lg shadow-lg p-8">
+    <h3 class="text-xl font-semibold text-gray-900 mb-6">Detailed Results</h3>
+    
+    <div class="space-y-6">
+        {% for result in detailed_results %}
+            <div class="border border-gray-200 rounded-lg p-6
+                {% if result.is_correct %}bg-green-50 border-green-200{% else %}bg-red-50 border-red-200{% endif %}
+            ">
+                <div class="flex items-start justify-between mb-4">
+                    <h4 class="text-lg font-medium text-gray-900 flex-1">
+                        Question {{ forloop.counter }}: {{ result.question }}
+                    </h4>
+                    <span class="ml-4 px-3 py-1 rounded-full text-sm font-medium
+                        {% if result.is_correct %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}
+                    ">
+                        {% if result.is_correct %}✓ Correct{% else %}✗ Incorrect{% endif %}
+                    </span>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <!-- Options -->
+                    <div>
+                        <h5 class="font-medium text-gray-700 mb-2">Options:</h5>
+                        <div class="space-y-1">
+                            {% for option in result.options %}
+                                <div class="p-2 rounded text-sm
+                                    {% if forloop.counter0 == result.selected_option and forloop.counter0 == result.correct_answer %}
+                                        bg-green-200 text-green-800 font-medium
+                                    {% elif forloop.counter0 == result.selected_option %}
+                                        bg-red-200 text-red-800 font-medium
+                                    {% elif forloop.counter0 == result.correct_answer %}
+                                        bg-green-100 text-green-700 font-medium
+                                    {% else %}
+                                        bg-gray-100 text-gray-700
+                                    {% endif %}
+                                ">
+                                    <strong>{{ forloop.counter0|index_to_letter }}.</strong> {{ option }}
+                                    {% if forloop.counter0 == result.selected_option %}
+                                        <span class="float-right">👆 Your answer</span>
+                                    {% elif forloop.counter0 == result.correct_answer %}
+                                        <span class="float-right">✓ Correct</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    
+                    <!-- Answer Summary -->
+                    <div>
+                        <h5 class="font-medium text-gray-700 mb-2">Summary:</h5>
+                        <div class="text-sm text-gray-600 space-y-1">
+                            <p><strong>Your Answer:</strong> {{ result.selected_text }}</p>
+                            <p><strong>Correct Answer:</strong> {{ result.correct_text }}</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Explanation -->
+                <div class="border-t pt-4">
+                    <h5 class="font-medium text-gray-700 mb-2">Explanation:</h5>
+                    <p class="text-gray-600">{{ result.explanation }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Quiz Statistics -->
+<div class="mt-8 bg-gray-100 rounded-lg p-6">
+    <h3 class="text-lg font-semibold text-gray-900 mb-4">Quiz Statistics</h3>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+        <div>
+            <p class="text-gray-600 font-medium">Topic</p>
+            <p class="text-gray-800">
+                <span id="stats-topic-preview">{{ quiz.topic|truncatechars:30 }}</span>
+                <span id="stats-topic-full" class="hidden">{{ quiz.topic }}</span>
+                {% if quiz.topic|length > 30 %}
+                    <button 
+                        onclick="toggleStatsTopic()"
+                        class="ml-1 text-xs text-gray-500 hover:text-gray-700"
+                    >
+                        <span id="stats-toggle-icon">...</span>
+                    </button>
+                {% endif %}
+            </p>
+        </div>
+        <div>
+            <p class="text-gray-600 font-medium">Difficulty</p>
+            <p class="text-gray-800 capitalize">{{ quiz.difficulty }}</p>
+        </div>
+        <div>
+            <p class="text-gray-600 font-medium">Total Questions</p>
+            <p class="text-gray-800">{{ quiz.total_questions }}</p>
+        </div>
+        <div>
+            <p class="text-gray-600 font-medium">Completed</p>
+            <p class="text-gray-800">{{ quiz_session.started_at|date:"M d, Y H:i" }}</p>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle results topic display
+function toggleResultsTopic() {
+    const topicPreview = document.getElementById('results-topic-preview');
+    const topicFull = document.getElementById('results-topic-full');
+    const toggleIcon = document.getElementById('results-toggle-icon');
+    
+    if (topicPreview.classList.contains('hidden')) {
+        topicPreview.classList.remove('hidden');
+        topicFull.classList.add('hidden');
+        toggleIcon.textContent = '👁️';
+    } else {
+        topicPreview.classList.add('hidden');
+        topicFull.classList.remove('hidden');
+        toggleIcon.textContent = '🙈';
+    }
+}
+
+// Toggle stats topic display
+function toggleStatsTopic() {
+    const statsTopicPreview = document.getElementById('stats-topic-preview');
+    const statsTopicFull = document.getElementById('stats-topic-full');
+    const statsToggleIcon = document.getElementById('stats-toggle-icon');
+    
+    if (statsTopicPreview.classList.contains('hidden')) {
+        statsTopicPreview.classList.remove('hidden');
+        statsTopicFull.classList.add('hidden');
+        statsToggleIcon.textContent = '...';
+    } else {
+        statsTopicPreview.classList.add('hidden');
+        statsTopicFull.classList.remove('hidden');
+        statsToggleIcon.textContent = '⬆️';
+    }
+}
+</script>
+{% endblock %}
